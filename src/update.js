@@ -9,8 +9,8 @@ export const UPDATE = Object.freeze({
   checkEveryDays: 1,
   hintEveryDays: 3,
   timeoutMs: 5000,
-  url: 'https://raw.githubusercontent.com/QingYunA/answer-me-with-html/main/package.json',
-  highlightsUrl: 'https://raw.githubusercontent.com/QingYunA/answer-me-with-html/main/highlights.json',
+  url: 'https://raw.githubusercontent.com/yuhxuiao/answer-me-with-html/main/package.json',
+  highlightsUrl: 'https://raw.githubusercontent.com/yuhxuiao/answer-me-with-html/main/highlights.json',
 });
 
 // highlights.json: { "version": "x.y.z", "<language id>": ["line", ...], ... }, written in the release PR (CONTRIBUTING.md).
