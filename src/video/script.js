@@ -52,8 +52,22 @@ export function normalizeNarrationText(raw) {
 }
 
 function beat(raw, line) {
-  const focus = [...raw.matchAll(FOCUS)].map((m) => m[1].trim());
-  return { raw, text: normalizeNarrationText(raw), focus: focus[0] ?? null, line };
+  const text = normalizeNarrationText(raw);
+  const totalLen = Math.max(1, text.length);
+  const focuses = [];
+  let cleanPos = 0;
+  let lastIdx = 0;
+  for (const m of raw.matchAll(FOCUS)) {
+    const before = raw.slice(lastIdx, m.index).replace(/\s+/g, ' ');
+    cleanPos += before.length;
+    const name = m[1].trim();
+    if (name) {
+      focuses.push({ name, frac: Math.min(0.92, Math.max(0, cleanPos / totalLen)) });
+    }
+    cleanPos += name.length;
+    lastIdx = m.index + m[0].length;
+  }
+  return { raw, text, focus: focuses[0]?.name ?? null, focuses, line };
 }
 
 // Without a voice-over, reading time is estimated from word count: Chinese about 4.2 characters/s, words about 2.6/s.
@@ -85,7 +99,7 @@ export function buildTimeline(video, durations) {
     const dur = durations[k++];
     const start = t;
     t += dur + TIMING.gap;
-    return { text: b.text, focus: b.focus, start: round(start), end: round(start + dur) };
+    return { text: b.text, focus: b.focus, focuses: b.focuses ?? [], start: round(start), end: round(start + dur) };
   });
 
   const titleBeats = lay(video.introBeats);

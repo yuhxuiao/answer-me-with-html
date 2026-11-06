@@ -25,8 +25,10 @@ AM_EOF
 ````
 
 - One `## ` is one scene. To make every scene visually rich (like a Motion-Graphics Bento dashboard rather than a bare single chart), combine **a top `kv cols=4` Hero KPI row** (`标签: 数值 | 副标题 | [ok|err|warn|accent] | [clock|zap|dollar|alert|shield]`) with **a diagram (`flow LR`, `chart pie`, `chart bar horizontal`) or a dual-layer `主结论 // 次要说明` table** in the same scene!
-- When the Nth narration line plays, step N of the picture appears and animates (Hero KPI cards pop in, flowchart edges draw in one stroke, horizontal bars grow from 0% to 100%). Write 3–6 narration lines below the components.
-- Write `[name]` in narration: the camera zooms in on the node or actor with that name and highlights it. The name must match how it is written in the component.
+- **Semantic Audio-Visual Sync Rule (`[name]` 1-to-1 Alignment)**:
+  - The video engine binds each visual step (each Hero KPI card, flowchart branch, chart row, or table row) directly to the `[name]` tag in your `> ` narration lines, calculating the exact intra-sentence spoken timestamp (`beat.start + charOffsetRatio * duration`)!
+  - Therefore, **every visual item in a scene MUST have a corresponding `[name]` in the narration in the exact order the items appear on screen**. You may put multiple `[name]` tags in a single narration sentence (e.g., `保底缓存 [5 分钟]，命中率 [94.8%]，帮你省下 [$1,102.32]，未命中仅多花 [$38.25]。`) — as the voice speaks each `[name]`, that card/bar/node pops in, receives the glowing gold spotlight, and lights up in the subtitle simultaneously!
+  - In `flow LR`, write the branches in the same order your narration walks through them so top-to-bottom visual order matches the spoken order.
 - Nodes with the same name in adjacent scenes move smoothly to their new position. To keep the viewer following one object, reuse the same name in the next scene.
 - 3–6 scenes per video, one or two sentences per narration line.
 - Narration is read aloud, so write it as speech, as if explaining to someone face to face: transitions like `你看`, `那问题来了`, `我们换个角度看` are fine, and characters' "lines" go in quotes. Do not write it like a manual (`客户端发送 SYN 报文以请求建立连接`). Sentence length is still subject to the STE check.

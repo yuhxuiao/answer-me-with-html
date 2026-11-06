@@ -95,7 +95,8 @@ html[data-chapters] .amv-viewport { bottom: 96px; }
   border: var(--bw) solid var(--v-cap-border);
 }
 .amv-caption span:empty { display: none; }
-.amv-caption b { color: var(--accent); font-weight: 700; }
+.amv-caption b { color: var(--ink-2); font-weight: 600; transition: color 0.18s ease, text-shadow 0.18s ease; }
+.amv-caption b.is-spoken { color: var(--accent); font-weight: 700; text-shadow: 0 0 14px var(--accent-bg); text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
 .amv-clause { display: inline-block; font-style: normal; }
 
 /* ── Highlight when narration names an element; edge labels stay grey until named ── */

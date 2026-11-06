@@ -91,11 +91,12 @@ function renderScenes(video, meta, timeline, ctx, ui) {
 
 const beatsOf = (video, i) => (i === 0 ? video.introBeats : video.scenes[i - 1].beats);
 
-// Captions: [name] becomes a highlighted word, and clauses (ending in ，。！？；：) are wrapped in inline-block spans so line wraps happen strictly at punctuation instead of splitting words mid-character.
+// Captions: [name] becomes a highlighted word with a sequential data-kw index so the player can light up each keyword at the exact moment it is spoken; clauses are wrapped in inline-block spans so line wraps happen strictly at punctuation.
 export function captionHtml(raw) {
+  let kwIdx = 0;
   const inner = raw.split(/(\[[^\]\n]+\])/).map((part) => {
     const m = part.match(/^\[([^\]]+)\]$/);
-    return m ? `<b>${esc(m[1])}</b>` : esc(part);
+    return m ? `<b class="amv-kw" data-kw="${kwIdx++}">${esc(m[1])}</b>` : esc(part);
   }).join('');
   const clauses = inner.split(/(?<=[，。！？；：,!?])\s*/).filter(Boolean);
   if (clauses.length <= 1) return inner;

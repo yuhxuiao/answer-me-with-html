@@ -45,6 +45,13 @@
   };
 
   // ── 2. Steps: group by data-step when a component sets it, else one step per row / item ──
+  const normKey = (s) => String(s || '').replace(/[`*\s]/g, '').toLowerCase();
+  const groupSearchText = (g) => normKey(g.map((el) => [
+    el.dataset?.key || '',
+    ...[...(el.querySelectorAll ? el.querySelectorAll('[data-key]') : [])].map((n) => n.dataset.key || ''),
+    el.textContent || '',
+  ].join(' ')).join(' '));
+
   const items = [];   // { el, at, paths: [{ el, len }] }
   scenes.forEach((sc, i) => {
     if (i === 0) return;
@@ -68,20 +75,71 @@
     const beats = segs[i].beats;
     const S = groups.length;
     const B = beats.length;
-    const perBeat = new Map();
+
+    // Collect all spoken [name] mentions in this scene with their exact intra-beat spoken timestamp.
+    const mentions = [];
+    beats.forEach((b) => {
+      const flist = b.focuses?.length ? b.focuses : (b.focus ? [{ name: b.focus, frac: 0 }] : []);
+      flist.forEach((f) => {
+        const nk = normKey(f.name);
+        if (nk) {
+          mentions.push({
+            norm: nk,
+            at: b.start + (f.frac ?? 0) * Math.max(0, b.end - b.start) * 0.82,
+            used: false,
+          });
+        }
+      });
+    });
+
+    // Try semantic matching first: bind each step group to the first unused mention whose keyword appears in that group.
+    const gTimes = new Array(S).fill(null);
+    let matchedCount = 0;
     groups.forEach((g, gi) => {
-      // With more beats than steps, the extra beats open the scene: steps align to the last beats.
-      const b = S <= B ? gi + (B - S) : Math.floor((gi * B) / S);
-      const rank = perBeat.get(b) ?? 0;
-      perBeat.set(b, rank + 1);
-      const beat = beats[b];
-      const count = S <= B ? 1 : Math.ceil(S / B) || 1;
-      const slot = Math.min(0.45, (beat.end - beat.start) / count);
+      const gtxt = groupSearchText(g);
+      if (!gtxt) return;
+      const hit = mentions.find((m) => !m.used && gtxt.includes(m.norm));
+      if (hit) {
+        hit.used = true;
+        gTimes[gi] = Math.max(segs[i].start, hit.at - 0.12);
+        matchedCount++;
+      }
+    });
+
+    if (matchedCount > 0) {
+      // Fill any unmatched step groups (e.g. intro nodes before the first [name]) by interpolating between matched neighbors.
+      for (let gi = 0; gi < S; gi++) {
+        if (gTimes[gi] !== null) continue;
+        let prevIdx = -1;
+        for (let k = gi - 1; k >= 0; k--) { if (gTimes[k] !== null) { prevIdx = k; break; } }
+        let nextIdx = -1;
+        for (let k = gi + 1; k < S; k++) { if (gTimes[k] !== null) { nextIdx = k; break; } }
+        const tStart = prevIdx >= 0 ? gTimes[prevIdx] : segs[i].start;
+        const tEnd = nextIdx >= 0 ? gTimes[nextIdx] : (beats[B - 1]?.start ?? segs[i].start);
+        const spanCount = (nextIdx >= 0 ? nextIdx : S) - (prevIdx >= 0 ? prevIdx : -1);
+        const offset = gi - (prevIdx >= 0 ? prevIdx : -1);
+        gTimes[gi] = tStart + (Math.max(0, tEnd - tStart) * offset) / Math.max(1, spanCount);
+      }
+    } else {
+      const perBeat = new Map();
+      groups.forEach((_, gi) => {
+        const b = S <= B ? gi + (B - S) : Math.floor((gi * B) / S);
+        const rank = perBeat.get(b) ?? 0;
+        perBeat.set(b, rank + 1);
+        const beat = beats[b];
+        const count = S <= B ? 1 : Math.ceil(S / B) || 1;
+        const slot = Math.min(0.45, (beat.end - beat.start) / count);
+        gTimes[gi] = beat.start + rank * slot;
+      });
+    }
+
+    groups.forEach((g, gi) => {
+      const at = gTimes[gi] ?? segs[i].start;
       for (const el of g) {
         const paths = (el.matches('path.am-edge') ? [el] : [...el.querySelectorAll('path.am-edge')])
           .filter((p) => !p.classList.contains('am-edge--dashed'))
           .map((p) => ({ el: p, len: p.getTotalLength() }));
-        items.push({ el, scene: i, at: beat.start + rank * slot, paths });
+        items.push({ el, scene: i, at, paths });
       }
     });
   });
@@ -149,16 +207,20 @@
   // ── 4. Camera: the element named by [name] in the narration ──
   const findKey = (sc, key) => {
     const all = [...sc.querySelectorAll('[data-key]')];
-    const norm = (s) => s.replace(/[`*]/g, '').trim().toLowerCase();
-    return all.find((el) => norm(el.dataset.key) === norm(key))
-      ?? all.find((el) => norm(el.dataset.key).includes(norm(key)))
-      ?? [...sc.querySelectorAll(`${STEP_SEL}, text`)].find((el) => norm(el.textContent).includes(norm(key)));
+    const norm = (s) => s.replace(/[`*\s]/g, '').toLowerCase();
+    const nk = norm(key);
+    const rawHit = all.find((el) => norm(el.dataset.key) === nk)
+      ?? all.find((el) => norm(el.dataset.key).includes(nk))
+      ?? [...sc.querySelectorAll(`${STEP_SEL}, g.am-ch-row, text`)].find((el) => norm(el.textContent).includes(nk));
+    if (!rawHit) return null;
+    return rawHit.closest?.('.hero-card, tbody tr, g.am-ch-row, .am-tl-item, .am-lim') ?? rawHit;
   };
   const IDENT = { s: 1, x: 0, y: 0 };
   // Zoom without cropping: the whole diagram must stay in the safe area between title and captions.
   const SAFE = { left: 80, right: W - 80, top: 125, bottom: H - 240 }; // leave room for captions at the bottom
   function focusCam(r, sc) {
     const fit = sc.querySelector('.amv-fit');
+    if (fit && fit.children.length > 1) return IDENT; // keep full Bento canvas visible when multiple blocks share a scene
     const c = fit ? rectOf(fit) : { x: 0, y: 0, w: W, h: H };
     const room = Math.min((SAFE.right - SAFE.left) / c.w, (SAFE.bottom - SAFE.top) / c.h);
     const s = clamp(Math.min(0.5 * W / r.w, 0.42 * H / r.h, room, 1.32), 1, 1.32);
@@ -173,10 +235,20 @@
   segs.forEach((seg, i) => {
     camEvents.push({ t: seg.start, cam: IDENT, hl: null });
     seg.beats.forEach((b) => {
-      const el = b.focus ? findKey(scenes[i], b.focus) : null;
-      let cam = IDENT;
-      if (el) cam = focusCam(rectOf(el), scenes[i]);
-      camEvents.push({ t: b.start, cam, hl: el });
+      const flist = b.focuses?.length ? b.focuses : (b.focus ? [{ name: b.focus, frac: 0 }] : []);
+      if (!flist.length) {
+        camEvents.push({ t: b.start, cam: IDENT, hl: null });
+        return;
+      }
+      flist.forEach((f, fi) => {
+        const el = findKey(scenes[i], f.name);
+        let cam = IDENT;
+        if (el) cam = focusCam(rectOf(el), scenes[i]);
+        const t = fi === 0 && (f.frac ?? 0) < 0.08
+          ? b.start
+          : b.start + (f.frac ?? 0) * Math.max(0, b.end - b.start) * 0.82;
+        camEvents.push({ t, cam, hl: el });
+      });
     });
   });
   const hlTargets = new Set(camEvents.map((e) => e.hl).filter(Boolean));
@@ -264,6 +336,16 @@
     if (caption.dataset.html !== html) {
       caption.innerHTML = html;
       caption.dataset.html = html;
+    }
+    if (b) {
+      const flist = b.focuses?.length ? b.focuses : (b.focus ? [{ name: b.focus, frac: 0 }] : []);
+      const dur = Math.max(0.1, b.end - b.start);
+      for (const kwEl of caption.querySelectorAll('b.amv-kw')) {
+        const idx = Number(kwEl.dataset.kw);
+        const f = flist[idx];
+        const kwTime = f ? b.start + (f.frac ?? 0) * dur * 0.82 - 0.08 : b.start;
+        kwEl.classList.toggle('is-spoken', t >= kwTime);
+      }
     }
     caption.style.opacity = b ? clamp((t - b.start) / 0.2) : 0;
   }
