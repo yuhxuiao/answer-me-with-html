@@ -88,6 +88,7 @@ html[data-chapters] .amv-viewport { bottom: 96px; }
 }
 .amv-caption span:empty { display: none; }
 .amv-caption b { color: var(--accent); font-weight: 700; }
+.amv-clause { display: inline-block; font-style: normal; }
 
 /* ── Highlight when narration names an element; edge labels stay grey until named ── */
 html[data-video] .am-diagram .am-edge-label text { fill: var(--ink-2); }

@@ -1385,6 +1385,7 @@ html[data-chapters] .amv-viewport { bottom: 96px; }
 }
 .amv-caption span:empty { display: none; }
 .amv-caption b { color: var(--accent); font-weight: 700; }
+.amv-clause { display: inline-block; font-style: normal; }
 
 /* \u2500\u2500 Highlight when narration names an element; edge labels stay grey until named \u2500\u2500 */
 html[data-video] .am-diagram .am-edge-label text { fill: var(--ink-2); }
@@ -11191,11 +11192,11 @@ function stableJson(value) {
   return JSON.stringify(value);
 }
 var EDGE_VOICES = {
-  zh: "zh-CN-YunxiNeural",
-  "zh-hant": "zh-TW-YunJheNeural",
-  "zh-tw": "zh-TW-YunJheNeural",
-  ja: "ja-JP-KeitaNeural",
-  en: "en-US-AndrewNeural"
+  zh: "zh-CN-XiaoxiaoNeural",
+  "zh-hant": "zh-TW-HsiaoChenNeural",
+  "zh-tw": "zh-TW-HsiaoChenNeural",
+  ja: "ja-JP-NanamiNeural",
+  en: "en-US-AvaMultilingualNeural"
 };
 function edgeVoiceFor(language) {
   const tag = String(language || "zh").toLowerCase();
@@ -11203,20 +11204,50 @@ function edgeVoiceFor(language) {
   const base = baseLanguage(tag);
   return EDGE_VOICES[base] || EDGE_VOICES.zh;
 }
+function cleanSpeechText(text2) {
+  let s = String(text2 || "");
+  s = s.replace(/(\d+(?:\.\d+)?)\s*[~～—\-]\s*(\d+(?:\.\d+)?)/g, "$1\u5230$2");
+  s = s.replace(/\bGM4\b/g, "Gemini 4");
+  s = s.replace(/\s*[（(]([^）)]+)[）)]/g, "\uFF0C$1\uFF0C");
+  s = s.replace(/([\u4e00-\u9fff])\s+/g, "$1");
+  s = s.replace(/\s+([\u4e00-\u9fff])/g, "$1");
+  s = s.replace(/(\d+%?)\s+([\u4e00-\u9fff])/g, "$1$2");
+  s = s.replace(/([\u4e00-\u9fff])\s+(\d+)/g, "$1$2");
+  s = s.replace(/[，,]{2,}/g, "\uFF0C");
+  s = s.replace(/，([。！？；：])/g, "$1");
+  s = s.replace(/^，+|，+$/g, "");
+  return s.trim();
+}
+function ensureEdgeTts(which) {
+  if (process.env.HOME && !String(process.env.PATH || "").includes(`${process.env.HOME}/.local/bin`)) {
+    process.env.PATH = `${process.env.HOME}/.local/bin:${process.env.PATH || ""}`;
+  }
+  if (which("edge-tts")) return true;
+  if (which("uv")) {
+    spawnSync2("uv", ["tool", "install", "edge-tts"], { stdio: "ignore", timeout: 3e4 });
+    if (which("edge-tts")) return true;
+  }
+  if (which("pip3")) {
+    spawnSync2("pip3", ["install", "--user", "-q", "edge-tts"], { stdio: "ignore", timeout: 45e3 });
+    if (which("edge-tts")) return true;
+  }
+  return false;
+}
 function systemVoice(platform, which) {
-  if (which("edge-tts") && which("ffmpeg")) {
+  if (which("ffmpeg") && ensureEdgeTts(which)) {
     return {
       name: "edge-tts",
       voice: "system",
-      id: "edge-tts:v1",
+      id: "edge-tts:v2",
       concurrency: 4,
       usesLanguage: true,
       voiceFor: (language) => process.env.AM_EDGE_VOICE || edgeVoiceFor(language),
       synth: (text2, { voice } = {}) => withTemp(async (wavFile) => {
         const mp3File = `${wavFile}.mp3`;
-        const txtFile = textFile(wavFile, text2);
-        const chosenVoice = voice || process.env.AM_EDGE_VOICE || "zh-CN-YunxiNeural";
-        await run("edge-tts", ["--voice", chosenVoice, "--rate=+8%", "-f", txtFile, "--write-media", mp3File]);
+        const spoken = cleanSpeechText(text2);
+        const txtFile = textFile(wavFile, spoken);
+        const chosenVoice = voice || process.env.AM_EDGE_VOICE || "zh-CN-XiaoxiaoNeural";
+        await run("edge-tts", ["--voice", chosenVoice, "--rate=+4%", "-f", txtFile, "--write-media", mp3File]);
         await run("ffmpeg", ["-v", "error", "-y", "-i", mp3File, "-ac", "1", "-ar", String(SAMPLE_RATE), "-c:a", "pcm_s16le", wavFile]);
         return readWav(readFileSync7(wavFile));
       })
@@ -11535,10 +11566,13 @@ function renderScenes(video, meta, timeline, ctx, ui) {
 }
 var beatsOf = (video, i) => i === 0 ? video.introBeats : video.scenes[i - 1].beats;
 function captionHtml(raw) {
-  return raw.split(/(\[[^\]\n]+\])/).map((part) => {
+  const inner = raw.split(/(\[[^\]\n]+\])/).map((part) => {
     const m2 = part.match(/^\[([^\]]+)\]$/);
     return m2 ? `<b>${esc(m2[1])}</b>` : esc(part);
   }).join("");
+  const clauses = inner.split(/(?<=[，。！？；：,!?])\s*/).filter(Boolean);
+  if (clauses.length <= 1) return inner;
+  return clauses.map((c2) => `<i class="amv-clause">${c2}</i>`).join("");
 }
 function formatClock(seconds) {
   const total = Math.max(0, Math.round(Number(seconds) || 0));

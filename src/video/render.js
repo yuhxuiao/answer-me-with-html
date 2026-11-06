@@ -91,12 +91,15 @@ function renderScenes(video, meta, timeline, ctx, ui) {
 
 const beatsOf = (video, i) => (i === 0 ? video.introBeats : video.scenes[i - 1].beats);
 
-// Captions: [name] becomes a highlighted word.
+// Captions: [name] becomes a highlighted word, and clauses (ending in ，。！？；：) are wrapped in inline-block spans so line wraps happen strictly at punctuation instead of splitting words mid-character.
 export function captionHtml(raw) {
-  return raw.split(/(\[[^\]\n]+\])/).map((part) => {
+  const inner = raw.split(/(\[[^\]\n]+\])/).map((part) => {
     const m = part.match(/^\[([^\]]+)\]$/);
     return m ? `<b>${esc(m[1])}</b>` : esc(part);
   }).join('');
+  const clauses = inner.split(/(?<=[，。！？；：,!?])\s*/).filter(Boolean);
+  if (clauses.length <= 1) return inner;
+  return clauses.map((c) => `<i class="amv-clause">${c}</i>`).join('');
 }
 
 export function formatClock(seconds) {

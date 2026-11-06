@@ -281,11 +281,11 @@ function stableJson(value) {
 }
 
 const EDGE_VOICES = {
-  zh: 'zh-CN-YunxiNeural',
-  'zh-hant': 'zh-TW-YunJheNeural',
-  'zh-tw': 'zh-TW-YunJheNeural',
-  ja: 'ja-JP-KeitaNeural',
-  en: 'en-US-AndrewNeural',
+  zh: 'zh-CN-XiaoxiaoNeural',
+  'zh-hant': 'zh-TW-HsiaoChenNeural',
+  'zh-tw': 'zh-TW-HsiaoChenNeural',
+  ja: 'ja-JP-NanamiNeural',
+  en: 'en-US-AvaMultilingualNeural',
 };
 
 function edgeVoiceFor(language) {
@@ -295,20 +295,53 @@ function edgeVoiceFor(language) {
   return EDGE_VOICES[base] || EDGE_VOICES.zh;
 }
 
+// Normalize spoken Chinese text so TTS pauses strictly at commas/periods instead of breaking on spaces, tildes, or brackets.
+export function cleanSpeechText(text) {
+  let s = String(text || '');
+  s = s.replace(/(\d+(?:\.\d+)?)\s*[~～—\-]\s*(\d+(?:\.\d+)?)/g, '$1到$2');
+  s = s.replace(/\bGM4\b/g, 'Gemini 4');
+  s = s.replace(/\s*[（(]([^）)]+)[）)]/g, '，$1，');
+  s = s.replace(/([\u4e00-\u9fff])\s+/g, '$1');
+  s = s.replace(/\s+([\u4e00-\u9fff])/g, '$1');
+  s = s.replace(/(\d+%?)\s+([\u4e00-\u9fff])/g, '$1$2');
+  s = s.replace(/([\u4e00-\u9fff])\s+(\d+)/g, '$1$2');
+  s = s.replace(/[，,]{2,}/g, '，');
+  s = s.replace(/，([。！？；：])/g, '$1');
+  s = s.replace(/^，+|，+$/g, '');
+  return s.trim();
+}
+
+function ensureEdgeTts(which) {
+  if (process.env.HOME && !String(process.env.PATH || '').includes(`${process.env.HOME}/.local/bin`)) {
+    process.env.PATH = `${process.env.HOME}/.local/bin:${process.env.PATH || ''}`;
+  }
+  if (which('edge-tts')) return true;
+  if (which('uv')) {
+    spawnSync('uv', ['tool', 'install', 'edge-tts'], { stdio: 'ignore', timeout: 30000 });
+    if (which('edge-tts')) return true;
+  }
+  if (which('pip3')) {
+    spawnSync('pip3', ['install', '--user', '-q', 'edge-tts'], { stdio: 'ignore', timeout: 45000 });
+    if (which('edge-tts')) return true;
+  }
+  return false;
+}
+
 function systemVoice(platform, which) {
-  if (which('edge-tts') && which('ffmpeg')) {
+  if (which('ffmpeg') && ensureEdgeTts(which)) {
     return {
       name: 'edge-tts',
       voice: 'system',
-      id: 'edge-tts:v1',
+      id: 'edge-tts:v2',
       concurrency: 4,
       usesLanguage: true,
       voiceFor: (language) => process.env.AM_EDGE_VOICE || edgeVoiceFor(language),
       synth: (text, { voice } = {}) => withTemp(async (wavFile) => {
         const mp3File = `${wavFile}.mp3`;
-        const txtFile = textFile(wavFile, text);
-        const chosenVoice = voice || process.env.AM_EDGE_VOICE || 'zh-CN-YunxiNeural';
-        await run('edge-tts', ['--voice', chosenVoice, '--rate=+8%', '-f', txtFile, '--write-media', mp3File]);
+        const spoken = cleanSpeechText(text);
+        const txtFile = textFile(wavFile, spoken);
+        const chosenVoice = voice || process.env.AM_EDGE_VOICE || 'zh-CN-XiaoxiaoNeural';
+        await run('edge-tts', ['--voice', chosenVoice, '--rate=+4%', '-f', txtFile, '--write-media', mp3File]);
         await run('ffmpeg', ['-v', 'error', '-y', '-i', mp3File, '-ac', '1', '-ar', String(SAMPLE_RATE), '-c:a', 'pcm_s16le', wavFile]);
         return readWav(readFileSync(wavFile));
       }),
