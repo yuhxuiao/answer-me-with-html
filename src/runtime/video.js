@@ -19,13 +19,13 @@
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const ease = (x) => { const v = clamp(x); return v < 0.5 ? 4 * v * v * v : 1 - (-2 * v + 2) ** 3 / 2; };
   const lerp = (a, b, p) => a + (b - a) * p;
-  const STEP_SEL = '.am-tl-item, .am-lim, .am-seg, tbody tr, .am-kv-cell, .am-md > ul > li, .am-md > ol > li, .am-md > p, .am-md > blockquote, .am-callout';
+  const STEP_SEL = '.hero-card, .bar-row, .am-tl-item, .am-lim, .am-seg, tbody tr, .am-kv-cell, .am-md > ul > li, .am-md > ol > li, .am-md > p, .am-md > blockquote, .am-callout';
 
   // ── 1. Fit each scene's content to the frame ──
   for (const sc of scenes) {
     const fit = sc.querySelector('.amv-fit');
     if (!fit || !fit.children.length) continue;
-    const s = Math.min(1600 / fit.offsetWidth, 740 / fit.offsetHeight, 3.4);
+    const s = Math.min(1620 / fit.offsetWidth, 680 / fit.offsetHeight, 2.25);
     fit.style.transform = `scale(${s})`;
   }
 
@@ -156,17 +156,17 @@
   };
   const IDENT = { s: 1, x: 0, y: 0 };
   // Zoom without cropping: the whole diagram must stay in the safe area between title and captions.
-  const SAFE = { left: 60, right: W - 60, top: 150, bottom: H - 200 }; // leave room for captions at the bottom
+  const SAFE = { left: 80, right: W - 80, top: 125, bottom: H - 240 }; // leave room for captions at the bottom
   function focusCam(r, sc) {
     const fit = sc.querySelector('.amv-fit');
     const c = fit ? rectOf(fit) : { x: 0, y: 0, w: W, h: H };
     const room = Math.min((SAFE.right - SAFE.left) / c.w, (SAFE.bottom - SAFE.top) / c.h);
-    const s = clamp(Math.min(0.5 * W / r.w, 0.42 * H / r.h, room, 1.4), 1, 1.4);
+    const s = clamp(Math.min(0.5 * W / r.w, 0.42 * H / r.h, room, 1.32), 1, 1.32);
     const fitAxis = (want, lo, hi, a, b) => (s * (b - a) <= hi - lo ? clamp(want, lo - s * a, hi - s * b) : want);
     return {
       s,
       x: fitAxis(W / 2 - s * (r.x + r.w / 2), SAFE.left, SAFE.right, c.x, c.x + c.w),
-      y: fitAxis(H * 0.5 - s * (r.y + r.h / 2), SAFE.top, SAFE.bottom, c.y, c.y + c.h),
+      y: fitAxis(H * 0.44 - s * (r.y + r.h / 2), SAFE.top, SAFE.bottom, c.y, c.y + c.h),
     };
   }
   const camEvents = [];   // { t, cam, hl }
@@ -201,14 +201,20 @@
     });
   }
 
-  // Steps appear: edges draw in one stroke, other elements fade in and rise slightly.
+  // Steps appear: edges draw in one stroke, bars grow horizontally, other elements fade in and rise slightly.
   function drawSteps(t) {
     for (const it of items) {
       if (carried.has(it.el)) continue;
       const p = ease((t - it.at) / R);
-      it.el.style.opacity = clamp((t - it.at) / 0.25);
+      it.el.style.opacity = clamp((t - it.at) / 0.28);
+      const bars = it.el.querySelectorAll ? [...it.el.querySelectorAll('.am-ch-bar, .am-lim-fill, .bar-fill')] : [];
+      for (const bar of bars) {
+        bar.style.transform = `scaleX(${p})`;
+        bar.style.transformOrigin = 'left center';
+        bar.style.transformBox = 'fill-box';
+      }
       if (!it.paths.length) {
-        it.el.style.transform = p < 1 ? `translateY(${(1 - p) * 14}px)` : '';
+        it.el.style.transform = p < 1 ? `translateY(${(1 - p) * 16}px) scale(${0.96 + 0.04 * p})` : '';
         continue;
       }
       for (const { el, len } of it.paths) {

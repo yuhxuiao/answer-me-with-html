@@ -52,8 +52,16 @@ html[data-chapters] .amv-viewport { bottom: 96px; }
 .amv-scene-title { flex: 1; display: flex; align-items: center; padding: 0 22px; font: 600 32px var(--v-title-font); }
 .amv-scene-meta { display: flex; align-items: center; padding: 0 22px; font: 16px var(--font-mono); color: var(--ink-2); letter-spacing: 0.06em; }
 
-.amv-body { position: absolute; left: 96px; right: 96px; top: 160px; height: 760px; display: grid; place-items: center; }
-.amv-fit { width: max-content; max-width: 1100px; transform-origin: 50% 50%; display: flex; flex-direction: column; gap: 28px; }
+.amv-body { position: absolute; left: 88px; right: 88px; top: 118px; height: 740px; display: grid; place-items: center; }
+.amv-fit { width: max-content; max-width: 1440px; transform-origin: 50% 50%; display: flex; flex-direction: column; align-items: stretch; gap: 24px; }
+.amv-fit .hero-grid { gap: 18px; width: 1280px; }
+.amv-fit .hero-card { padding: 18px 22px; background: var(--paper); border: 1px solid var(--line-2); box-shadow: var(--shadow); }
+.amv-fit .hero-label { font-size: 16px; }
+.amv-fit .hero-val { font-size: 36px; margin: 10px 0 6px; }
+.amv-fit .hero-sub { font-size: 14px; }
+.amv-fit .hero-icon-box { width: 36px; height: 36px; border-radius: 10px; }
+.amv-fit .hero-icon-box .ico-lg { width: 22px; height: 22px; }
+.amv-fit .am-ch-data { display: none; }
 .amv-fit .am-diagram { overflow: visible; }
 .amv-fit .am-diagram svg { max-width: none; overflow: visible; }
 /* The stage sizes .amv-fit to its content, which a size container would collapse to nothing; the stage is 1920 px wide, so a timeline stays horizontal. */
@@ -97,9 +105,11 @@ html[data-video] .am-diagram .am-edge-label text { fill: var(--ink-2); }
 }
 html[data-video] .am-diagram .amv-hl text, html[data-video] .am-diagram text.amv-hl { fill: var(--accent); font-weight: 600; }
 .amv-hl .am-edge { stroke: var(--accent); stroke-width: 2.4; }
-.amv-hl.am-tree-box, .amv-hl.am-tl-item, .amv-hl.am-lim, .amv-hl.am-kv-cell, li.amv-hl > .am-tree-label, tr.amv-hl td, .amv-hl.am-seg {
-  color: var(--accent); outline: 2.5px solid var(--accent); outline-offset: 4px; border-radius: 4px;
+.amv-hl.am-tree-box, .amv-hl.am-tl-item, .amv-hl.am-lim, .amv-hl.am-kv-cell, .amv-hl.hero-card, li.amv-hl > .am-tree-label, tr.amv-hl td, .amv-hl.am-seg {
+  color: var(--accent); outline: 2.5px solid var(--accent); outline-offset: 4px; border-radius: 8px; box-shadow: 0 0 28px var(--accent-bg);
 }
+g.amv-hl .am-ch-bar, g.amv-hl .am-ch-slice { filter: var(--v-glow); stroke: var(--accent); stroke-width: 2.5px; }
+g.amv-hl text { fill: var(--accent) !important; font-weight: 700 !important; }
 
 /* ── Player controls (outside the picture) ── */
 .amv-bigplay {

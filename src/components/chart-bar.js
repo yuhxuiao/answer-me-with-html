@@ -39,8 +39,8 @@ export function drawBars(data, { horizontal = false, unit = '', dir = 'ltr', lab
 
 // ── Pieces both directions share ──
 
-// The classes of a bar. A highlighted row of a single series takes the accent color; a chart with a highlight mutes its other rows.
-const barClass = (m, row, k) => `am-ch-bar ${row.hi && m.count === 1 ? 'am-ch-hi' : `am-ch-s${k + 1}`}`;
+// The classes of a bar. Single-series charts cycle through the 6 series colors per row so every bar has a distinct vibrant color; a highlighted row gets the .is-hi glow.
+const barClass = (m, row, k, i = 0) => `am-ch-bar ${m.count === 1 ? `am-ch-s${(i % 6) + 1}${row.hi ? ' am-ch-hi' : ''}` : `am-ch-s${k + 1}`}`;
 const rowClass = (m, row) => `am-ch-row${m.anyHi ? (row.hi ? ' is-hi' : ' is-dim') : ''}`;
 const rowGroup = (m, row, i, title, inner) => stepGroup(i, rowClass(m, row), title, inner);
 
@@ -94,7 +94,7 @@ function verticalBars(m) {
       const x = gx + k * (bw + GAP);
       const h = Math.max(Math.abs(y(v) - y0), v === 0 ? 0 : 1);
       const top = v >= 0 ? y0 - h : y0;
-      const bar = `<rect class="${barClass(m, row, k)}" x="${f(rectX(x, bw))}" y="${f(top)}" width="${bw}" height="${f(h)}" rx="2"/>`;
+      const bar = `<rect class="${barClass(m, row, k, i)}" x="${f(rectX(x, bw))}" y="${f(top)}" width="${bw}" height="${f(h)}" rx="3"/>`;
       if (!labels) return bar;
       const at = v >= 0 ? top - 4 : top + h + FS.val + 1;
       return bar + text('am-ch-val', X(x + bw / 2), at, m.tick(v), dir, ' text-anchor="middle"');
@@ -144,7 +144,7 @@ function horizontalBars(m) {
       const by = gy + k * (bh + GAP);
       const [from, to] = [Math.min(x0, x(v)), Math.max(x0, x(v))];
       const w = Math.max(to - from, v === 0 ? 0 : 1);
-      const bar = `<rect class="${barClass(m, row, k)}" x="${f(rtl ? W - from - w : from)}" y="${f(by)}" width="${f(w)}" height="${bh}" rx="2"/>`;
+      const bar = `<rect class="${barClass(m, row, k, i)}" x="${f(rtl ? W - from - w : from)}" y="${f(by)}" width="${f(w)}" height="${bh}" rx="3"/>`;
       if (!labels) return bar;
       const end = v >= 0 ? x(v) + 4 : x(v) - 4;
       return bar + text('am-ch-val', X(end), by + bh / 2, m.tick(v), dir, ` text-anchor="${v >= 0 ? 'start' : 'end'}" dominant-baseline="central"`);

@@ -24,8 +24,8 @@ Client -> Server: ACK
 AM_EOF
 ````
 
-- One `## ` is one scene. Put one component (or one table, one list) in a scene as the picture, and write 2–5 narration lines below it.
-- When the Nth narration line plays, the picture shows step N. In flow / er / sequence / tree every source line is one step; timeline, limits, chart rows, table rows and list items step by entry. So the line order of the component is the order of the explanation. When there are more narration lines than steps, the extra first lines serve as an opening and show nothing new.
+- One `## ` is one scene. To make every scene visually rich (like a Motion-Graphics Bento dashboard rather than a bare single chart), combine **a top `kv cols=4` Hero KPI row** (`标签: 数值 | 副标题 | [ok|err|warn|accent] | [clock|zap|dollar|alert|shield]`) with **a diagram (`flow LR`, `chart pie`, `chart bar horizontal`) or a dual-layer `主结论 // 次要说明` table** in the same scene!
+- When the Nth narration line plays, step N of the picture appears and animates (Hero KPI cards pop in, flowchart edges draw in one stroke, horizontal bars grow from 0% to 100%). Write 3–6 narration lines below the components.
 - Write `[name]` in narration: the camera zooms in on the node or actor with that name and highlights it. The name must match how it is written in the component.
 - Nodes with the same name in adjacent scenes move smoothly to their new position. To keep the viewer following one object, reuse the same name in the next scene.
 - 3–6 scenes per video, one or two sentences per narration line.

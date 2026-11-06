@@ -21,9 +21,10 @@ html[data-mode="dark"] {
 .am-ch-s4 { fill: var(--series-4, var(--am-ch-4)); }
 .am-ch-s5 { fill: var(--series-5, var(--am-ch-5)); }
 .am-ch-s6 { fill: var(--series-6, var(--am-ch-6)); }
-/* A highlighted row of a single series takes the accent color; in a chart with a highlight the other rows are gray (a line is never gray). */
-.am-ch-hi { fill: var(--accent, #1d5fbf); }
-.am-ch-row.is-dim .am-ch-bar, .am-ch-row.is-dim .am-ch-slice, .am-ch-row.is-dim .am-ch-sw { fill: var(--line-2, #d6dae1); fill: color-mix(in oklch, var(--ink-3, #8b929e) 40%, var(--paper, #ffffff)); }
+/* A highlighted row stands out with full opacity and a subtle glow; non-highlighted rows keep their series colors at slightly softer opacity instead of turning grey. */
+.am-ch-row.is-dim { opacity: 0.72; }
+.am-ch-row.is-hi { opacity: 1; filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.12)); }
+.am-ch-bar { transform-box: fill-box; transform-origin: left center; animation: barGrow 0.85s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 
 /* A line: a stroke in the series color, a dot on each point; the dot has an outline in the paper color where lines cross. A pie slice has
    the same outline, which is the gap between slices. */
