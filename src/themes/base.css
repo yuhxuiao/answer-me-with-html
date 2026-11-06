@@ -127,7 +127,7 @@ code, pre, kbd { font-family: var(--font-mono); }
 .am-panel:hover .am-comment-btn, .am-comment-btn:focus-visible, .am-comment-btn[aria-expanded="true"] { border-color: var(--line-2); color: var(--ink-2); }
 .am-panel .am-comment-btn.am-comment-btn--on { color: var(--accent); border-color: var(--accent); }
 .am-panel--bare { position: relative; }
-.am-panel--bare > .am-comment-btn { position: absolute; top: 4px; inset-inline-end: 0; }
+.am-panel--bare > .am-comment-btn { display: none; }
 .am-comment { padding: 0 14px 12px; }
 .am-comment textarea, .am-reply textarea {
   width: 100%; font: var(--am-fs-text)/1.5 var(--font-sans); color: var(--ink); background: var(--paper);

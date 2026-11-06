@@ -133,7 +133,20 @@ function decorate(html) {
     .replace(/<\/table>/g, '</table></div>')
     .replace(IMAGE_ONLY, (_, img) => figure(img))
     .replace(CELL_STATUS, (_, attrs, word, label = '') => `<td${attrs}>${statusHtml(word, label)}</td>`)
-    .replace(/<td([^>]*)>([\s\S]*?)\s+\/\/\s+([\s\S]*?)<\/td>/g, (_, attrs, pri, sec) => `<td${attrs}><span class="pri-title">${pri.trim()}</span><span class="sec-note">${sec.trim()}</span></td>`);
+    .replace(/<td([^>]*)>([\s\S]*?)\s+\/\/\s+([\s\S]*?)<\/td>/g, (_, attrs, pri, sec) => {
+      let p = pri.trim();
+      let colorStyle = '';
+      const toneMatch = p.match(/^\[(ok|err|warn|accent)\]\s*(.*)$/);
+      if (toneMatch) {
+        colorStyle = ` style="color:var(--${toneMatch[1]})"`;
+        p = toneMatch[2];
+      } else if (/^(省\s*\$|✓|\+\$)/.test(p)) {
+        colorStyle = ' style="color:var(--ok)"';
+      } else if (/^(多花\s*\$|亏损|\-\$)/.test(p)) {
+        colorStyle = ' style="color:var(--err)"';
+      }
+      return `<td${attrs}><span class="pri-title"${colorStyle}>${p}</span><span class="sec-note">${sec.trim()}</span></td>`;
+    });
 }
 
 // CommonMark takes a space in a link destination only inside <…>, so marked would leave ![alt](a b.png) as text. Wrap such a destination; code spans are skipped.
