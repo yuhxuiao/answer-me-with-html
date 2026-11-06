@@ -659,7 +659,7 @@ table.am-mark { background: none; }
 .cost-table tbody tr { transition: background 0.15s ease; }
 .cost-table tbody tr:hover { background: var(--fill); }
 .cost-table tr:last-child td { border-bottom: 0; }
-.pri-title { font-size: var(--am-fs-body); font-weight: 600; color: var(--ink); display: flex; align-items: center; }
+.pri-title { font-size: var(--am-fs-body); font-weight: 600; color: var(--ink); display: block; line-height: 1.4; }
 .sec-note { font-size: var(--am-fs-label); color: var(--ink-3); display: block; margin-top: 3px; line-height: 1.35; }
 .pri-money { font: 700 16px/1.2 var(--font-mono); white-space: nowrap; }
 .pri-tok { font: 600 13.5px/1.2 var(--font-mono); color: var(--ink); white-space: nowrap; }
