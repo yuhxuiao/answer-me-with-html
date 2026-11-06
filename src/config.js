@@ -17,7 +17,7 @@ export class ConfigError extends Error {
 
 export const CONFIG_KEYS = Object.freeze({
   open: { type: 'bool', default: true, label: 'Open the page in the browser after it is made' },
-  theme: { type: 'enum', choices: CHOICES.theme, default: AUTO, label: 'Default theme (auto: paper for long text, blueprint for diagrams)' },
+  theme: { type: 'enum', choices: CHOICES.theme, default: 'shadcn', label: 'Default theme (shadcn cards by default)' },
   mode: { type: 'enum', choices: CHOICES.mode, default: 'auto', label: 'Default light/dark mode' },
   style: { type: 'enum', choices: CHOICES.style, default: '80', label: 'STE writing-check strictness' },
   scale: { type: 'number', min: SCALE.min, max: SCALE.max, step: SCALE.step, default: 1, label: 'Text size on the page (1 = default, 1.2 = 20% larger; diagrams and charts grow with it)' },

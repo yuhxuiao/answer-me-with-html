@@ -93,9 +93,18 @@ marked.use(math);
 inline.use(math);
 
 const STATUS = {
-  ok: { cls: 'ok', icon: '✓' },
-  no: { cls: 'no', icon: '✗' },
-  warn: { cls: 'warn', icon: '!' },
+  ok: {
+    cls: 'ok',
+    icon: '<svg class="ico" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  },
+  no: {
+    cls: 'no',
+    icon: '<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  },
+  warn: {
+    cls: 'warn',
+    icon: '<svg class="ico" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  },
 };
 const STATUS_ALIAS = { '✓': 'ok', '✔': 'ok', '✗': 'no', '✘': 'no', '⚠': 'warn' };
 
@@ -109,8 +118,8 @@ export function statusHtml(word, label = '') {
 // A paragraph that holds only an image becomes a figure; the alt text is its caption.
 const IMAGE_ONLY = /<p>\s*(<img\b[^>]*>)\s*<\/p>/g;
 
-// The status word must open the cell; the label after it may hold inline HTML (code, em, strong, a) but never crosses a cell boundary.
-const CELL_STATUS = /<td([^>]*)>\s*(ok|no|warn|✓|✔|✗|✘|⚠)(?:\s+((?:(?!<\/?td\b)[\s\S])*?))?\s*<\/td>/g;
+// The status word must open the cell (even if accidentally wrapped in <code> or <strong>); the label after it may hold inline HTML.
+const CELL_STATUS = /<td([^>]*)>\s*(?:<(?:code|strong|b)>\s*)?(ok|no|warn|✓|✔|✗|✘|⚠)(?:\s+((?:(?!<\/?td\b)[\s\S])*?))?(?:\s*<\/(?:code|strong|b)>)?\s*<\/td>/g;
 
 function figure(img) {
   const alt = img.match(/\salt="([^"]*)"/)?.[1];
@@ -123,7 +132,8 @@ function decorate(html) {
     .replace(/<table>/g, '<div class="am-table-wrap"><table>')
     .replace(/<\/table>/g, '</table></div>')
     .replace(IMAGE_ONLY, (_, img) => figure(img))
-    .replace(CELL_STATUS, (_, attrs, word, label = '') => `<td${attrs}>${statusHtml(word, label)}</td>`);
+    .replace(CELL_STATUS, (_, attrs, word, label = '') => `<td${attrs}>${statusHtml(word, label)}</td>`)
+    .replace(/<td([^>]*)>([\s\S]*?)\s+\/\/\s+([\s\S]*?)<\/td>/g, (_, attrs, pri, sec) => `<td${attrs}><span class="pri-title">${pri.trim()}</span><span class="sec-note">${sec.trim()}</span></td>`);
 }
 
 // CommonMark takes a space in a link destination only inside <…>, so marked would leave ![alt](a b.png) as text. Wrap such a destination; code spans are skipped.
