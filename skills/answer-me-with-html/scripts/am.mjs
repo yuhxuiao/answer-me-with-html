@@ -11190,7 +11190,38 @@ function stableJson(value) {
   }
   return JSON.stringify(value);
 }
+var EDGE_VOICES = {
+  zh: "zh-CN-YunxiNeural",
+  "zh-hant": "zh-TW-YunJheNeural",
+  "zh-tw": "zh-TW-YunJheNeural",
+  ja: "ja-JP-KeitaNeural",
+  en: "en-US-AndrewNeural"
+};
+function edgeVoiceFor(language) {
+  const tag = String(language || "zh").toLowerCase();
+  if (EDGE_VOICES[tag]) return EDGE_VOICES[tag];
+  const base = baseLanguage(tag);
+  return EDGE_VOICES[base] || EDGE_VOICES.zh;
+}
 function systemVoice(platform, which) {
+  if (which("edge-tts") && which("ffmpeg")) {
+    return {
+      name: "edge-tts",
+      voice: "system",
+      id: "edge-tts:v1",
+      concurrency: 4,
+      usesLanguage: true,
+      voiceFor: (language) => process.env.AM_EDGE_VOICE || edgeVoiceFor(language),
+      synth: (text2, { voice } = {}) => withTemp(async (wavFile) => {
+        const mp3File = `${wavFile}.mp3`;
+        const txtFile = textFile(wavFile, text2);
+        const chosenVoice = voice || process.env.AM_EDGE_VOICE || "zh-CN-YunxiNeural";
+        await run("edge-tts", ["--voice", chosenVoice, "--rate=+8%", "-f", txtFile, "--write-media", mp3File]);
+        await run("ffmpeg", ["-v", "error", "-y", "-i", mp3File, "-ac", "1", "-ar", String(SAMPLE_RATE), "-c:a", "pcm_s16le", wavFile]);
+        return readWav(readFileSync7(wavFile));
+      })
+    };
+  }
   if (platform === "darwin" && which("say")) {
     const voices = macVoices();
     return {
